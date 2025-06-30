@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YouTube Downloader</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    textarea { width: 100%; height: 150px; }
+    .result { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>YouTube Batch Downloader</h1>
+  <form id="downloadForm">
+    <label for="links">Enter YouTube Links (one per line):</label><br>
+    <textarea id="links" required></textarea><br><br>
+    <label>
+      <input type="radio" name="format" value="mp4" checked> Video (MP4)
+    </label>
+    <label>
+      <input type="radio" name="format" value="mp3"> Audio (MP3)
+    </label><br><br>
+    <button type="submit">Download</button>
+  </form>
+  <div class="result" id="result"></div>
+  <script>
+    document.getElementById('downloadForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const links = document.getElementById('links').value.trim().split('\n').filter(Boolean);
+      const format = document.querySelector('input[name="format"]:checked').value;
+      document.getElementById('result').innerText = 'Processing...';
+      try {
+        const response = await fetch('/api/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ links, format })
+        });
+        if (!response.ok) throw new Error('Server error');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `downloads.${format === 'mp3' ? 'zip' : 'zip'}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        document.getElementById('result').innerText = 'Download started!';
+      } catch (e) {
+        document.getElementById('result').innerText = 'Error: ' + e.message;
+      }
+    });
+  </script>
+</body>
+</html>
